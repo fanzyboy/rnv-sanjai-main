@@ -37,28 +37,27 @@ class AuthController extends Controller
             $request->session()->regenerate();
 
             return $this->redirectByRole(Auth::user()->role)
-                        ->with('success', 'Berhasil login!');
+                         ->with('success', 'Berhasil login!');
         }
 
-        return back()->with('error', 'Email atau password salah!')
-                     ->withInput($request->only('email'));
+        return back()
+            ->with('error', 'Email atau password salah!')
+            ->withInput($request->only('email'));
     }
 
     /**
      * 🔹 Logout user
      */
     public function logout(Request $request)
-{
-    Auth::logout();
+    {
+        Auth::logout();
 
-    // Hapus session
-    $request->session()->invalidate();
-    $request->session()->regenerateToken();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
 
-    // Redirect ke login + pesan sukses
-    return redirect()->route('login.post')->with('success', 'Berhasil logout!');
-}
-
+        return redirect()->route('login')
+            ->with('success', 'Berhasil logout!');
+    }
 
     /**
      * 🔹 Tampilkan form register
@@ -83,10 +82,11 @@ class AuthController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'user', // otomatis user
+            'role' => 'user', // default user
         ]);
 
-        return redirect()->route('login')->with('success', 'Akun berhasil dibuat! Silakan login.');
+        return redirect()->route('login')
+            ->with('success', 'Akun berhasil dibuat! Silakan login.');
     }
 
     /**
@@ -96,45 +96,48 @@ class AuthController extends Controller
     {
         switch ($role) {
             case 'admin':
-                // return redirect()->route('admin.dashboard');
+                return redirect()->route('admin.dashboard');
+
             case 'user':
             default:
-                return redirect()->route('produk'); // bisa ubah ke 'produk.index'
+                return redirect()->route('produk'); // halaman user
         }
     }
 
-public function profile()
-{
-    $user = Auth::user();
-    return view('auth.profile', compact('user'));
-}
+    /**
+     * 🔹 Profil user
+     */
+    public function profile()
+    {
+        $user = Auth::user();
+        return view('auth.profile', compact('user'));
+    }
 
+    /**
+     * 🔹 Update profil user
+     */
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'name'      => 'required|string|max:100',
+            'email'     => 'required|email|unique:users,email,' . Auth::id(),
+            'alamat'    => 'nullable|string|max:255',
+            'latitude'  => 'nullable|numeric',
+            'longitude' => 'nullable|numeric',
+            'no_hp'     => 'nullable|string|max:20',
+        ]);
 
-public function updateProfile(Request $request)
-{
-   $request->validate([
-    'name'      => 'required|string|max:100',
-    'email'     => 'required|email|unique:users,email,' . Auth::id(),
-    'alamat'    => 'nullable|string|max:255',
-    'latitude'  => 'nullable|numeric',
-    'longitude' => 'nullable|numeric',
-    'no_hp'     => 'nullable|string|max:20',
-]);
+        $user = Auth::user();
 
+        $user->update([
+            'name'      => $request->name,
+            'email'     => $request->email,
+            'alamat'    => $request->alamat,
+            'latitude'  => $request->latitude,
+            'longitude' => $request->longitude,
+            'no_hp'     => $request->no_hp,
+        ]);
 
-    $user = Auth::user();
-
-    $user->update([
-        'name'   => $request->name,
-        'email'  => $request->email,
-        'alamat' => $request->alamat,
-        'latitude'  => $request->latitude,
-        'longitude' => $request->longitude,
-        'no_hp'  => $request->no_hp,
-    ]);
-
-    return back()->with('success', 'Profil berhasil diperbarui!');
-}
-
-
+        return back()->with('success', 'Profil berhasil diperbarui!');
+    }
 }
