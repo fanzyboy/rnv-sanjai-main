@@ -25,7 +25,8 @@ class User extends Authenticatable
         'alamat',
         'latitude',
         'longitude',
-        'no_hp'
+        'no_hp',
+        'google_id'
     ];
 
     /**

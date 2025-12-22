@@ -5,13 +5,14 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\HomeController;
 
+use App\Http\Controllers\RatingController;
 use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CheckoutController;
 use App\Http\Controllers\PreorderController;
 use App\Http\Controllers\KeranjangController;
-use App\Http\Controllers\AdminTransactionController;
+use App\Http\Controllers\SocialiteController;
 use App\Http\Controllers\AdminReportController;
-use App\Http\Controllers\RatingController;
+use App\Http\Controllers\AdminTransactionController;
 
 Route::get('/', [HomeController::class, 'index'])->name('beranda');
 Route::get('/tentang', [HomeController::class, 'about'])->name('tentang');
@@ -103,4 +104,8 @@ Route::put('/admin/preorders/updateStatus/{id}', [AdminTransactionController::cl
        Route::post('/rating', [RatingController::class, 'store'])
        ->name('rating.store')
        ->middleware('auth');
-   
+   // Rute untuk mengarahkan ke Google
+Route::get('/auth/google/redirect', [SocialiteController::class, 'redirectToGoogle'])->name('google.redirect');
+
+// Rute untuk callback dari Google
+Route::get('/auth/google/callback', [SocialiteController::class, 'handleGoogleCallback'])->name('google.callback');

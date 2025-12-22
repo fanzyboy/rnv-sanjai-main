@@ -3,6 +3,7 @@
 @section('title', 'Login - R&V Sanjai')
 
 @section('content')
+
 <div class="login-page d-flex align-items-center justify-content-center min-vh-100 bg-light">
     <div class="login-card p-4 shadow-lg rounded-4 bg-white" style="max-width: 420px; width: 100%;">
         <div class="text-center mb-4">
@@ -50,6 +51,10 @@
                 style="background: linear-gradient(135deg,#ff6b35,#ffc107); border: none;">
                 <i class="fas fa-sign-in-alt me-2"></i>Masuk
             </button>
+
+            <a href="{{ route('google.redirect') }}" class="btn btn-danger">
+                <i class="fab fa-google"></i> Login dengan Google
+            </a>
 
             <div class="text-center mt-3">
                 <p class="small text-muted mb-0">
