@@ -16,30 +16,25 @@ class PreorderController extends Controller
      */
     public function create(Request $request)
     {
-        // Pastikan user login
         if (!Auth::check()) {
             return redirect()->route('login')
                 ->with('error', 'Silakan login terlebih dahulu untuk melakukan pre-order.');
         }
 
-        // Ambil variasi_id dari URL
         $variasiId = $request->query('variasi_id');
 
-        // Validasi
         if (!$variasiId) {
             return redirect()->route('produk')
-                ->with('error', 'Variasi produk tidak ditentukan. Silakan pilih produk terlebih dahulu.');
+                ->with('error', 'Variasi produk tidak ditentukan.');
         }
 
-        // Ambil data variasi
         $price = ProductPrice::with('product')->find($variasiId);
 
         if (!$price) {
             return redirect()->route('produk')
-                ->with('error', 'Data variasi produk tidak ditemukan atau tidak valid.');
+                ->with('error', 'Data variasi produk tidak ditemukan.');
         }
 
-        // Qty default = 1 jika tidak dikirim
         $qty = $request->query('qty', 1);
 
         return view('preorder.create', compact('price', 'qty'));
@@ -48,86 +43,108 @@ class PreorderController extends Controller
     /**
      * SIMPAN PREORDER
      */
-   public function store(Request $request)
-{
-    if (!Auth::check()) {
-        return redirect()->route('login')
-            ->with('error', 'Silakan login terlebih dahulu untuk melakukan pre-order.');
-    }
+    public function store(Request $request)
+    {
+        if (!Auth::check()) {
+            return redirect()->route('login')
+                ->with('error', 'Silakan login terlebih dahulu.');
+        }
 
-    $validated = $request->validate([
-        'price_id'  => 'required|exists:product_prices,id',
-        'qty'       => 'required|integer|min:1',
-        'deskripsi' => 'nullable|string|max:255',
-    ]);
-
-    $user = Auth::user();
-
-    try {
-        $price = ProductPrice::with('product')->findOrFail($validated['price_id']);
-    } catch (\Exception $e) {
-        return back()->with('error', 'Variasi produk tidak ditemukan. Pre-order dibatalkan.');
-    }
-
-    // $existing = Preorder::where('user_id', $user->id)
-    //     ->where('price_id', $price->id)
-    //     ->first();
-
-    // if ($existing) {
-    //     return back()->with('warning', 'Kamu sudah melakukan pre-order untuk variasi ini.');
-    // }
-
-    try {
-
-        // Simpan ke database
-        $preorder = Preorder::create([
-            'user_id'          => $user->id,
-            'price_id'         => $price->id,
-            'qty'              => $validated['qty'],
-            'tanggal_preorder' => Carbon::now()->toDateString(),
-            'deskripsi'        => $validated['deskripsi'] ?? null,
+        // =========================
+        // VALIDASI
+        // =========================
+        $validated = $request->validate([
+            'price_id'          => 'required|exists:product_prices,id',
+            'qty'               => 'required|integer|min:1',
+            'deskripsi'         => 'nullable|string|max:255',
+            'metode_pembayaran' => 'required|in:transfer,cod',
+            'bukti_transfer'    => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
         ]);
 
-        // ======================================
-        // 🔥 KIRIM KE WHATSAPP ADMIN
-        // ======================================
+        // Transfer → bukti WAJIB
+        if (
+            $validated['metode_pembayaran'] === 'transfer'
+            && !$request->hasFile('bukti_transfer')
+        ) {
+            return back()->withErrors([
+                'bukti_transfer' => 'Bukti transfer wajib diupload.'
+            ])->withInput();
+        }
 
-        $adminNumber = "6285165755238"; // nomor admin (format internasional tanpa +)
+        $user = Auth::user();
 
-        $message = "📌 *PRE-ORDER BARU MASUK* 📌\n\n"
-            . "*Nama:* {$user->name}\n"
-            . "*Email:* {$user->email}\n"
-            . "*No Telp:* {$user->no_telp}\n"
-            . "*Alamat:* {$user->alamat}\n\n"
+        try {
+            $price = ProductPrice::with('product')->findOrFail($validated['price_id']);
+        } catch (\Exception $e) {
+            return back()->with('error', 'Variasi produk tidak ditemukan.');
+        }
 
-            . "=====================\n"
-            . "*Detail Pre-Order*\n"
-            . "=====================\n"
-            . "*Produk:* {$price->product->nama_produk}\n"
-            . "*Variasi:* {$price->variasi}\n"
-            . "*Qty:* {$preorder->qty}\n"
-            . "*Tanggal:* {$preorder->tanggal_preorder}\n"
-            . "*Catatan:* {$preorder->deskripsi}\n\n"
+        try {
+            // =========================
+            // HITUNG TOTAL AMOUNT
+            // =========================
+            $totalAmount = $validated['qty'] * $price->harga;
 
-            . "Silakan diproses 🙏";
+            // =========================
+            // SIMPAN BUKTI TRANSFER
+            // =========================
+            $buktiPath = null;
+            if ($request->hasFile('bukti_transfer')) {
+                $buktiPath = $request->file('bukti_transfer')
+                    ->store('bukti-preorder', 'public');
+            }
 
-        // Encode pesan ke URL
-        $waUrl = "https://wa.me/{$adminNumber}?text=" . urlencode($message);
+            // =========================
+            // SIMPAN PREORDER
+            // status default = pending (DB)
+            // =========================
+            $preorder = Preorder::create([
+                'user_id'           => $user->id,
+                'price_id'          => $price->id,
+                'qty'               => $validated['qty'],
+                'total_amount'      => $totalAmount,
+                'tanggal_preorder'  => Carbon::now()->toDateString(),
+                'deskripsi'         => $validated['deskripsi'] ?? null,
+                'bukti_transfer'    => $buktiPath,
+                'metode_pembayaran' => $validated['metode_pembayaran'],
+            ]);
 
-        // Redirect user ke WA admin
-        return redirect($waUrl);
+            // =========================
+            // NOTIFIKASI WHATSAPP ADMIN
+            // =========================
+            $adminNumber = "6285165755238";
 
-        // ======================================
+            $message = "📌 *PRE-ORDER BARU* 📌\n\n"
+                . "*Nama:* {$user->name}\n"
+                . "*Email:* {$user->email}\n"
+                . "*No Telp:* {$user->no_telp}\n"
+                . "*Alamat:* {$user->alamat}\n\n"
+                . "=====================\n"
+                . "*DETAIL PREORDER*\n"
+                . "=====================\n"
+                . "*Produk:* {$price->product->nama_produk}\n"
+                . "*Variasi:* {$price->variasi}\n"
+                . "*Qty:* {$preorder->qty}\n"
+                . "*Total:* Rp " . number_format($totalAmount, 0, ',', '.') . "\n"
+                . "*Metode:* " . strtoupper($validated['metode_pembayaran']) . "\n"
+                . "*Tanggal:* {$preorder->tanggal_preorder}\n"
+                . "*Catatan:* {$preorder->deskripsi}\n"
+                . "*Status:* Pending\n\n"
+                . "Silakan cek di admin panel 🙏";
 
-    } catch (\Exception $e) {
+            return redirect(
+                "https://wa.me/{$adminNumber}?text=" . urlencode($message)
+            );
 
-        Log::error('Preorder Store Error: ' . $e->getMessage(), [
-            'user_id'  => $user->id,
-            'price_id' => $validated['price_id'],
-        ]);
+        } catch (\Exception $e) {
 
-        return back()->with('error', 'Terjadi kesalahan saat membuat pre-order. Silakan coba lagi.');
+            Log::error('Preorder Store Error', [
+                'message' => $e->getMessage(),
+                'user_id' => $user->id,
+            ]);
+
+            return back()->with('error', 'Gagal membuat pre-order. Silakan coba lagi.');
+        }
     }
-}
-
+    
 }

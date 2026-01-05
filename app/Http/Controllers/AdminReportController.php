@@ -3,40 +3,86 @@
 namespace App\Http\Controllers;
 
 use App\Models\Order;
+use App\Models\Preorder;
+use Illuminate\Support\Facades\DB;
 
 class AdminReportController extends Controller
 {
     public function index()
     {
-        // QUERY DASAR (SAMA DENGAN DASHBOARD)
-        $finishedOrders = Order::where('status', 'selesai');
+        $month = request('month');
+        $year  = request('year');
 
-        // ✅ TOTAL PESANAN SELESAI
-        $totalOrders = $finishedOrders->count();
+        // ===============================
+        // ORDERS (SELESAI)
+        // ===============================
+        $ordersQuery = Order::where('status', 'selesai');
 
-        // ✅ TOTAL PENDAPATAN (FIX & SAMA DASHBOARD)
-        $totalRevenue = $finishedOrders->sum('total_amount');
+        if ($month) {
+            $ordersQuery->whereMonth('created_at', $month);
+        }
 
-        /**
-         * ✅ TOTAL PRODUK TERJUAL
-         * Karena TIDAK ADA kolom qty di tabel orders,
-         * maka:
-         * - Tidak bisa dihitung dari tabel ini
-         * - Harus dari order_items
-         */
-        $totalSold = 0; // aman, tidak manipulasi data
+        if ($year) {
+            $ordersQuery->whereYear('created_at', $year);
+        }
 
-        // ✅ DATA LAPORAN (HANYA YANG SELESAI)
-        $orders = Order::with('user')
-            ->where('status', 'selesai')
-            ->latest()
-            ->get();
+        // ===============================
+        // PREORDERS (SELESAI)
+        // ===============================
+        $preordersQuery = Preorder::where('status', 'selesai');
+
+        if ($month) {
+            $preordersQuery->whereMonth('created_at', $month);
+        }
+
+        if ($year) {
+            $preordersQuery->whereYear('created_at', $year);
+        }
+
+        // ===============================
+        // JUMLAH PESANAN
+        // ===============================
+        $totalOrderCount = $ordersQuery->count();
+        $totalPreorderCount = $preordersQuery->count();
+        $totalOrders = $totalOrderCount + $totalPreorderCount;
+
+        // ===============================
+        // TOTAL PENDAPATAN
+        // ===============================
+        $totalRevenue =
+            $ordersQuery->sum('total_amount') +
+            $preordersQuery->sum('total_amount');
+
+        // ===============================
+        // PRODUK TERJUAL
+        // ===============================
+
+        // ORDERS → hitung product_id di order_items
+        $orderIds = $ordersQuery->pluck('id');
+
+        $orderSold = DB::table('order_items')
+            ->whereIn('order_id', $orderIds)
+            ->count('product_id');
+
+        // PREORDERS → hitung price_id
+        $preorderSold = $preordersQuery->count('price_id');
+
+        $totalSold = $orderSold + $preorderSold;
+
+        // ===============================
+        // DATA TABEL
+        // ===============================
+        $orders = $ordersQuery->with('user')->latest()->get();
+        $preorders = $preordersQuery->with('user')->latest()->get();
 
         return view('admin.laporan.index', compact(
             'totalOrders',
+            'totalOrderCount',
+            'totalPreorderCount',
             'totalRevenue',
             'totalSold',
-            'orders'
+            'orders',
+            'preorders'
         ));
     }
 }

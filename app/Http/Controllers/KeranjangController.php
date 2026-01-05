@@ -5,133 +5,142 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Product;
+use App\Models\ProductPrice;
+use App\Models\Keranjang; // Pastikan model ini sudah diimport
 
 class KeranjangController extends Controller
 {
-    // ===========================
     // TAMPILKAN ISI KERANJANG
-    // ===========================
- public function index()
-{
-    // session()->forget('keranjang');
+    public function index()
+    {
+        if (!Auth::check()) return redirect()->route('login');
 
-    $keranjang = session()->get('keranjang', []);
+        // Ambil data dari database berdasarkan user yang login
+        $items = Keranjang::with(['produk', 'variasi'])
+                  ->where('user_id', Auth::id())
+                  ->get();
 
-    $total = 0;
-    foreach ($keranjang as $item) {
-        $total += $item['total'];
+        $keranjang = [];
+        foreach ($items as $item) {
+            // Sinkronisasi: jika produk/variasi dihapus admin, hapus dari keranjang user
+            if (!$item->produk || !$item->variasi) {
+                $item->delete();
+                continue;
+            }
+
+            $keranjang[] = [
+                'id'         => $item->id, // ID primary key dari tabel keranjangs
+                'produk_id'  => $item->produk_id,
+                'variasi_id' => $item->variasi_id,
+                'produk'     => $item->produk->nama_produk,
+                'gram'       => $item->variasi->berat . ' gram',
+                'harga'      => $item->variasi->harga,
+                'qty'        => $item->qty,
+                'total'      => $item->qty * $item->variasi->harga,
+                'foto'       => $item->produk->foto,
+                'stok'       => $item->variasi->stok,
+            ];
+        }
+
+        $total = array_sum(array_column($keranjang, 'total'));
+
+        return view('user.keranjang', compact('keranjang', 'total'));
     }
 
-    return view('user.keranjang', compact('keranjang', 'total'));
-}
-
-
-
-
-    // ==========================================================
-    // FUNGSI BARU: Mengambil jumlah item unik di keranjang (untuk AJAX)
-    // ==========================================================
+    // Mengambil jumlah item unik untuk badge navbar
     public function getCartCount(Request $request)
     {
-        $keranjang = session()->get('keranjang', []);
-        $count = count($keranjang);
+        $count = 0;
+        if (Auth::check()) {
+            $count = Keranjang::where('user_id', Auth::id())->count();
+        }
 
         return response()->json([
             'count' => $count
         ]);
     }
 
-    // ==========================================================
     // TAMBAH PRODUK KE KERANJANG
-    // ==========================================================
-   public function store(Request $request)
-{
-    try {
-        // 1. Cek Login
-        if (!Auth::check()) {
-            return redirect()->route('login')
-                ->with('error', 'Silakan login terlebih dahulu untuk menambahkan ke keranjang.');
-        }
+    public function store(Request $request)
+    {
+        try {
+            // 1. Cek Login
+            if (!Auth::check()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Silakan login terlebih dahulu.',
+                    'redirect' => route('login')
+                ], 401);
+            }
 
-        // 2. Cek Role
-        if (Auth::user()->role !== 'user') {
-            return response()->json([
-                'success' => false,
-                'message' => 'Hanya pengguna dengan role "user" yang dapat menambahkan produk ke keranjang.'
-            ], 403);
-        }
+            // 2. Cek Role
+            if (Auth::user()->role !== 'user') {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Hanya pembeli yang dapat menambah keranjang.'
+                ], 403);
+            }
 
-        // 3. Validasi
-        if (!$request->filled(['produk_id', 'variasi_id'])) {
-            return response()->json([
-                'success' => false,
-                'message' => 'ID Produk atau Variasi tidak ditemukan.'
-            ], 400);
-        }
+            // 3. Ambil data produk & variasi
+            $produk = Product::with('prices')->findOrFail($request->produk_id);
+            $variasi = $produk->prices()->findOrFail($request->variasi_id);
+            $qtyInput = $request->qty ?? 1;
 
-        // 4. Ambil produk
-        $produk = Product::with('prices')->findOrFail($request->produk_id);
-        $variasi = $produk->prices()->findOrFail($request->variasi_id);
+            // Logika Database: Cek apakah item sudah ada di keranjang user
+            $item = Keranjang::where('user_id', Auth::id())
+                             ->where('variasi_id', $variasi->id)
+                             ->first();
 
-        // 5. Tambah ke session keranjang
-        $keranjang = session()->get('keranjang', []);
-      $keranjang[] = [
-    'produk_id' => $produk->id,
-    'variasi_id' => $variasi->id,
-    'produk'    => $produk->nama_produk,
-    'gram'      => $variasi->berat . ' gram',
-    'harga'     => $variasi->harga, // harga satuan
-    'qty'       => $request->qty ?? 1, // default 1
-    'total'     => ($request->qty ?? 1) * $variasi->harga,
-    'foto'      => $produk->foto ?? null,
-];
+            if ($item) {
+                // Update Qty jika sudah ada
+                $item->update([
+                    'qty' => $item->qty + $qtyInput
+                ]);
+            } else {
+                // Simpan data baru ke database
+                Keranjang::create([
+                    'user_id'    => Auth::id(),
+                    'produk_id'  => $produk->id,
+                    'variasi_id' => $variasi->id,
+                    'qty'        => $qtyInput
+                ]);
+            }
 
-        session()->put('keranjang', $keranjang);
+            // Hitung total item unik di DB
+            $cartCount = Keranjang::where('user_id', Auth::id())->count();
 
-        // =============================
-        // 6. Jika request AJAX → JSON
-        // =============================
-        if ($request->ajax()) {
+            // Berikan pesan berbeda jika stok kosong
+            $pesan = ($variasi->stok <= 0)
+                ? 'Produk kosong ditambahkan ke keranjang (tidak dapat di-checkout).'
+                : 'Berhasil ditambahkan ke keranjang!';
+
             return response()->json([
                 'success' => true,
-                'message' => 'Produk berhasil ditambahkan ke keranjang!',
-                'count'   => count($keranjang)
+                'message' => $pesan,
+                'count'   => $cartCount
             ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Terjadi kesalahan: ' . $e->getMessage()
+            ], 500);
         }
-
-        // ===========================================
-        // 7. Jika bukan AJAX → redirect ke keranjang
-        // ===========================================
-        return redirect()->route('keranjang.index')
-            ->with('success', 'Produk berhasil ditambahkan ke keranjang!');
-
-    } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Item tidak tersedia atau ID tidak valid.'
-        ], 404);
-
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Terjadi kesalahan pada server. Silakan coba lagi.'
-        ], 500);
     }
-}
 
-    // ==========================================================
     // HAPUS ITEM KERANJANG
-    // ==========================================================
-    public function remove($index)
+    public function remove($id)
     {
-        $keranjang = session()->get('keranjang', []);
+        // Hapus berdasarkan ID primary key database
+        $item = Keranjang::where('id', $id)
+                         ->where('user_id', Auth::id())
+                         ->first();
 
-        if (isset($keranjang[$index])) {
-            unset($keranjang[$index]);
-            session()->put('keranjang', $keranjang);
+        if ($item) {
+            $item->delete();
+            return redirect()->route('keranjang.index')->with('success', 'Item berhasil dihapus!');
         }
 
-        return redirect()->route('keranjang.index')
-            ->with('success', 'Item berhasil dihapus!');
+        return redirect()->route('keranjang.index')->with('error', 'Item tidak ditemukan!');
     }
 }

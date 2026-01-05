@@ -16,4 +16,7 @@ return Application::configure(basePath: dirname(__DIR__))
             'role' => RoleMiddleware::class,
         ]);
     })
+    ->withExceptions(function (Exceptions $exceptions) {
+        // default Laravel 11 exception handling
+    })
     ->create();

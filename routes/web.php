@@ -44,17 +44,34 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [AuthController::class, 'profile'])->name('profile');
     Route::post('/profile/update', [AuthController::class, 'updateProfile'])->name('profile.update');
 
-    Route::get('/keranjang', [KeranjangController::class, 'index'])->name('keranjang.index');
-    Route::post('/keranjang', [KeranjangController::class, 'store'])->name('keranjang.tambah');
-    Route::delete('/keranjang/{index}', [KeranjangController::class, 'remove'])->name('keranjang.remove');
-    Route::get('/keranjang/count', [KeranjangController::class, 'getCartCount'])->name('keranjang.count');
+   Route::middleware('auth')->group(function () {
 
-    Route::post('/checkout/proses', [CheckoutController::class, 'proses'])->name('checkout.proses');
-    Route::post('/checkout/simpan', [CheckoutController::class, 'prosesCheckout'])->name('checkout.simpan');
+    Route::get('/keranjang', [KeranjangController::class, 'index'])
+        ->name('keranjang.index');
+
+    Route::post('/keranjang', [KeranjangController::class, 'store'])
+        ->name('keranjang.tambah');
+
+    Route::delete('/keranjang/{variasi_id}', [KeranjangController::class, 'remove'])
+        ->name('keranjang.remove');
+
+    Route::get('/keranjang/count', [KeranjangController::class, 'getCartCount'])
+        ->name('keranjang.count');
+});
+
+Route::get('/checkout/proses', [CheckoutController::class, 'proses'])
+    ->name('checkout.proses');
+
+// ✅ SIMPAN CHECKOUT (POST)
+Route::post('/checkout/simpan', [CheckoutController::class, 'prosesCheckout'])
+    ->name('checkout.simpan');
 
     Route::get('/pesanan-saya', [CheckoutController::class, 'pesananSaya'])->name('pesanan.saya');
 
     Route::post('/rating', [RatingController::class, 'store'])->name('rating.store');
+    Route::get('/preorder/{price_id?}', [PreorderController::class, 'create'])->name('preorder.create');
+Route::post('/preorder/store', [PreorderController::class, 'store'])->name('preorder.store');
+
 });
 
 /*

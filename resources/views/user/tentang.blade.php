@@ -3,6 +3,7 @@
 @section('title', 'Tentang - R&V Sanjai')
 
 @section('content')
+    {{-- Hero Section --}}
     <div class="about-hero">
         <div class="container">
             <div class="row align-items-center">
@@ -11,7 +12,7 @@
                         <i class="fas fa-leaf me-2"></i>Sejak 2021
                     </div>
                     <h1 class="hero-title">Tentang R&V Sanjai</h1>
-                    <p class="hero-subtitle">UMKM Keripik Sanjai dari Bukittinggi yang menghadirkan cita rasa autentik Minangkabau</p>
+                    <p class="hero-subtitle">UMKM Keripik Sanjai dari Lubuk Minturun, Kota Padang yang menghadirkan cita rasa autentik Minangkabau</p>
                     <div class="hero-stats">
                         <div class="stat-item">
                             <div class="stat-number">4+</div>
@@ -29,7 +30,7 @@
                 </div>
                 <div class="col-lg-6">
                     <div class="hero-image">
-                        <img src="https://picsum.photos/600/400?random=10" alt="R&V Sanjai" class="img-fluid">
+                        <img src="{{ asset('asset/sanjai.jpeg') }}" alt="R&V Sanjai" class="img-fluid">
                         <div class="floating-card">
                             <div class="card-icon">
                                 <i class="fas fa-award"></i>
@@ -45,6 +46,7 @@
         </div>
     </div>
 
+    {{-- Profil Section --}}
     <section class="profile-section">
         <div class="container">
             <div class="section-header text-center">
@@ -66,6 +68,7 @@
         </div>
     </section>
 
+    {{-- Visi Misi Section --}}
     <section class="vision-mission-section">
         <div class="container">
             <div class="section-header text-center">
@@ -113,7 +116,86 @@
         </div>
     </section>
 
+    {{-- Lokasi & Kontak Section --}}
+    <section class="contact-map-section py-5">
+        <div class="container">
+            <div class="section-header text-center">
+                <div class="section-badge">
+                    <i class="fas fa-map-marked-alt me-2"></i>Lokasi & Kontak
+                </div>
+                <h2 class="section-title">Hubungi & Kunjungi Kami</h2>
+            </div>
+
+            <div class="row g-4">
+                {{-- Info Box --}}
+                <div class="col-lg-4">
+                    <div class="contact-info-card shadow-sm h-100 p-4 bg-white">
+                        <div class="info-item mb-4">
+                            <div class="info-icon bg-orange-light">
+                                <i class="fas fa-map-marker-alt"></i>
+                            </div>
+                            <div class="info-text">
+                                <h6>Alamat Kami</h6>
+                                <p>Lubuk Minturun, Kota Padang, Sumatera Barat</p>
+                            </div>
+                        </div>
+
+                        <div class="info-item mb-4">
+                            <div class="info-icon bg-green-light">
+                                <i class="fab fa-whatsapp"></i>
+                            </div>
+                            <div class="info-text">
+                                <h6>WhatsApp</h6>
+                                <p>+62 851-6575-5238</p>
+                            </div>
+                        </div>
+
+                        <div class="info-item mb-4">
+                            <div class="info-icon bg-blue-light">
+                                <i class="fas fa-envelope"></i>
+                            </div>
+                            <div class="info-text">
+                                <h6>Email</h6>
+                                <p>info@rvsanjai.com</p>
+                            </div>
+                        </div>
+
+                        <div class="info-item mb-4">
+                            <div class="info-icon bg-purple-light">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="info-text">
+                                <h6>Jam Operasional</h6>
+                                <p>Setiap Hari: 08:00 - 21:00 WIB</p>
+                            </div>
+                        </div>
+
+                        <a href="https://www.google.com/maps?q=-0.8357175356353533,100.39611375732792" target="_blank" class="btn btn-outline-primary w-100 mt-2">
+                            <i class="fas fa-directions me-2"></i>Petunjuk Arah
+                        </a>
+                    </div>
+                </div>
+
+                {{-- Map Box --}}
+                <div class="col-lg-8">
+                    <div class="map-container shadow-sm overflow-hidden border rounded-3 bg-white">
+                        <iframe
+                            src="https://maps.google.com/maps?q=-0.8357175356353533,100.39611375732792&z=15&output=embed"
+                            width="100%"
+                            height="450"
+                            style="border:0;"
+                            allowfullscreen=""
+                            loading="lazy"
+                            referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
     <style>
+        /* CSS HERO & PROFILE */
         .about-hero{background:linear-gradient(135deg,#f8f9fa 0%,#e9ecef 100%);padding:4rem 0;position:relative;overflow:hidden}
         .about-hero::before{content:'';position:absolute;top:-50%;right:-20%;width:400px;height:400px;background:linear-gradient(135deg,rgba(255,107,53,.1),rgba(255,193,7,.1));border-radius:50%;z-index:1}
         .hero-badge{display:inline-flex;align-items:center;background:linear-gradient(135deg,#ff6b35,#ffc107);color:white;padding:8px 20px;border-radius:25px;font-size:.9rem;font-weight:600;margin-bottom:1.5rem;box-shadow:0 4px 15px rgba(255,107,53,.3);position:relative;z-index:2}
@@ -144,6 +226,19 @@
         .mission-icon{width:70px;height:70px;background:linear-gradient(135deg,#ff6b35,#ffc107);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.2rem;font-size:1.8rem;color:white;box-shadow:0 8px 20px rgba(255,107,53,.3)}
         .mission-content h5{color:#8B4513;font-weight:600;margin-bottom:1rem;font-size:1.1rem}
         .mission-content p{color:#6c757d;line-height:1.6;font-size:.95rem}
+
+        /* CSS BARU: KONTAK & MAPS */
+        .contact-info-card { border-left: 5px solid #ff6b35; border-radius: 15px; }
+        .info-item { display: flex; align-items: flex-start; gap: 1rem; }
+        .info-icon { width: 45px; height: 45px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; flex-shrink: 0; }
+        .bg-orange-light { background: rgba(255, 107, 53, 0.1); color: #ff6b35; }
+        .bg-green-light { background: rgba(40, 167, 69, 0.1); color: #28a745; }
+        .bg-blue-light { background: rgba(0, 123, 255, 0.1); color: #007bff; }
+        .bg-purple-light { background: rgba(111, 66, 193, 0.1); color: #6f42c1; }
+        .info-text h6 { margin: 0; font-weight: 700; color: #8B4513; font-size: 1rem; }
+        .info-text p { margin: 0; color: #6c757d; font-size: 0.9rem; }
+        .map-container { border-radius: 15px; height: 100%; min-height: 400px; }
+
         @media (max-width:768px){
             .hero-title{font-size:2.2rem}
             .hero-stats{flex-direction:column;gap:1rem;text-align:center}

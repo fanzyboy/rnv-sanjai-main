@@ -13,13 +13,26 @@ class HomeController extends Controller
     // Halaman Beranda
     public function index()
     {
-        $bestSeller = Product::with('prices')->take(3)->get();
+        // Logika diperbarui: Mengambil rata-rata rating dari tabel 'ratings'
+        // dan mengurutkan berdasarkan rata-rata tertinggi
+        $bestSeller = Product::with(['prices', 'ratings'])
+            ->withAvg('ratings as rata_rata', 'rating')
+            ->orderByDesc('rata_rata')
+            ->take(3)
+            ->get();
+
         return view('user.beranda', compact('bestSeller'));
     }
 
     public function bestSeller()
     {
-        $bestSeller = Product::with('prices')->take(3)->get();
+        // Disamakan logikanya dengan index untuk konsistensi data rating tertinggi
+        $bestSeller = Product::with(['prices', 'ratings'])
+            ->withAvg('ratings as rata_rata', 'rating')
+            ->orderByDesc('rata_rata')
+            ->take(3)
+            ->get();
+
         return view('welcome', compact('bestSeller'));
     }
 
@@ -31,45 +44,48 @@ class HomeController extends Controller
     // Halaman Produk
     public function produk()
     {
-        $produk = Product::with('prices')->get();
+        $produk = Product::with(['prices', 'ratings'])
+            ->withAvg('ratings as rata_rata', 'rating')
+            ->get();
+
         return view('user.produk', compact('produk'));
     }
 
     // Halaman Checkout
- public function checkout(Request $request)
-{
-    // Jika ada parameter Beli Sekarang
-    if ($request->has(['produk_id', 'variasi_id', 'qty'])) {
+    public function checkout(Request $request)
+    {
+        // Jika ada parameter Beli Sekarang
+        if ($request->has(['produk_id', 'variasi_id', 'qty'])) {
 
-        $produk = Product::with('prices')->find($request->produk_id);
+            $produk = Product::with('prices')->find($request->produk_id);
 
-        if (!$produk) {
-            return redirect()->back()->with('error', 'Produk tidak ditemukan.');
+            if (!$produk) {
+                return redirect()->back()->with('error', 'Produk tidak ditemukan.');
+            }
+
+            $variasi = $produk->prices->find($request->variasi_id);
+
+            if (!$variasi) {
+                return redirect()->back()->with('error', 'Variasi produk tidak ditemukan.');
+            }
+
+            // Keranjang hanya berisi 1 item (checkout langsung)
+            $keranjang = [[
+                'produk' => $produk->nama_produk,
+                'gram'   => $variasi->berat . ' gram',
+                'harga'  => $variasi->harga,
+                'qty'    => (int) $request->qty,
+                'total'  => $variasi->harga * (int)$request->qty,
+            ]];
+
+            return view('user.checkout', compact('keranjang'));
         }
 
-        $variasi = $produk->prices->find($request->variasi_id);
-
-        if (!$variasi) {
-            return redirect()->back()->with('error', 'Variasi produk tidak ditemukan.');
-        }
-
-        // Keranjang hanya berisi 1 item (checkout langsung)
-        $keranjang = [[
-            'produk' => $produk->nama_produk,
-            'gram'   => $variasi->berat . ' gram',
-            'harga'  => $variasi->harga,
-            'qty'    => (int) $request->qty,
-            'total'  => $variasi->harga * (int)$request->qty,
-        ]];
+        // Jika tidak ada parameter, cek session keranjang
+        $keranjang = session('keranjang', []);
 
         return view('user.checkout', compact('keranjang'));
     }
-
-    // Jika tidak ada parameter, cek session keranjang
-    $keranjang = session('keranjang', []);
-
-    return view('user.checkout', compact('keranjang'));
-}
 
 
     // Proses Checkout
@@ -111,49 +127,67 @@ class HomeController extends Controller
         // Redirect ke WhatsApp
         return redirect("https://wa.me/{$nomorAdmin}?text={$pesan}");
     }
-  public function adminDashboard()
-{
-    // Total pesanan masuk
-    $totalOrders = Order::count();
 
-    // Total pendapatan dari tabel orders
-    $totalOrderRevenue = Order::sum('total_amount');
+    public function adminDashboard()
+    {
+        // ===============================
+        // TOTAL PESANAN SELESAI
+        // ===============================
+        $totalOrders = Order::where('status', 'selesai')->count();
 
-    // Total pendapatan dari tabel preorders
-    $totalPreOrderRevenue = Preorder::with('price')
-        ->get()
-        ->sum(function ($item) {
-            return $item->price->harga * $item->qty;
-        });
+        // ===============================
+        // TOTAL PENDAPATAN ORDERS (SELESAI)
+        // ===============================
+        $totalOrderRevenue = Order::where('status', 'selesai')
+            ->sum('total_amount');
 
-    // Gabungkan pendapatan orders + preorders
-    $totalRevenue = $totalOrderRevenue + $totalPreOrderRevenue;
+        // ===============================
+        // TOTAL PENDAPATAN PREORDERS (SELESAI)
+        // ===============================
+        $totalPreOrderRevenue = Preorder::with('price')
+            ->where('status', 'selesai')
+            ->get()
+            ->sum(function ($item) {
+                return ($item->price->harga ?? 0) * $item->qty;
+            });
 
-    // Pesanan pending
-    $pendingOrders = Order::where('status', 'pending')->count();
+        // ===============================
+        // TOTAL PENDAPATAN GABUNGAN
+        // ===============================
+        $totalRevenue = $totalOrderRevenue + $totalPreOrderRevenue;
 
-    // Produk terlaris
-    $bestProduct = OrderItem::select('product_id')
-        ->selectRaw('SUM(quantity) as total_sold')
-        ->with('product')
-        ->groupBy('product_id')
-        ->orderByDesc('total_sold')
-        ->first();
+        // ===============================
+        // PESANAN PENDING
+        // ===============================
+        $pendingOrders = Order::where('status', 'pending')->count();
 
-    // Pesanan terbaru
-    $latestOrders = Order::with('user')
-        ->latest()
-        ->take(5)
-        ->get();
+        // ===============================
+        // PRODUK TERLARIS (DARI ORDER SELESAI)
+        // ===============================
+        $bestProduct = OrderItem::select('product_id')
+            ->selectRaw('SUM(quantity) as total_sold')
+            ->join('orders', 'orders.id', '=', 'order_items.order_id')
+            ->where('orders.status', 'selesai')
+            ->with('product')
+            ->groupBy('product_id')
+            ->orderByDesc('total_sold')
+            ->first();
 
-    return view('admin.dashboard', compact(
-        'totalOrders',
-        'totalRevenue',
-        'pendingOrders',
-        'bestProduct',
-        'latestOrders'
-    ));
-}
+        // ===============================
+        // PESANAN TERBARU (SELESAI)
+        // ===============================
+        $latestOrders = Order::with('user')
+            ->where('status', 'selesai')
+            ->latest()
+            ->take(5)
+            ->get();
 
-
+        return view('admin.dashboard', compact(
+            'totalOrders',
+            'totalRevenue',
+            'pendingOrders',
+            'bestProduct',
+            'latestOrders'
+        ));
+    }
 }

@@ -133,6 +133,41 @@
                                    value="{{ old('no_hp', $user->no_hp) }}" placeholder="08xxxxxxxxxx">
                         </div>
 
+                        {{-- Rekening Section --}}
+                        <div class="section-header mb-4 mt-5">
+                            <h5 class="fw-bold text-orange mb-1"><i class="bi bi-credit-card-fill me-2"></i>Informasi Rekening</h5>
+                            <div class="divider"></div>
+                        </div>
+
+                        <div class="row g-3 mb-4">
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Nama Bank</label>
+                                <select id="select_bank" name="nama_bank" class="form-select custom-input" onchange="checkBank(this)">
+                                    @php
+                                        $banks = ['BCA', 'BNI', 'BRI', 'Mandiri', 'BSI', 'CIMB Niaga', 'Permata'];
+                                        $currentBank = old('nama_bank', $user->nama_bank);
+                                        $isOther = !empty($currentBank) && !in_array($currentBank, $banks);
+                                    @endphp
+                                    <option value="">-- Pilih Bank --</option>
+                                    @foreach($banks as $bank)
+                                        <option value="{{ $bank }}" {{ $currentBank == $bank ? 'selected' : '' }}>{{ $bank }}</option>
+                                    @endforeach
+                                    <option value="lainnya" {{ $isOther ? 'selected' : '' }}>Lainnya...</option>
+                                </select>
+
+                                {{-- Input manual jika pilih lainnya --}}
+                                <div id="input_bank_lainnya" class="mt-2" style="display: {{ $isOther ? 'block' : 'none' }};">
+                                    <input type="text" id="nama_bank_manual" name="nama_bank_manual" class="form-control custom-input"
+                                           placeholder="Masukkan Nama Bank" value="{{ $isOther ? $currentBank : '' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label fw-semibold">Nomor Rekening</label>
+                                <input type="text" name="nomor_rekening" class="form-control custom-input"
+                                       value="{{ old('nomor_rekening', $user->nomor_rekening) }}" placeholder="Contoh: 1234567890">
+                            </div>
+                        </div>
+
                         <button type="submit" class="btn btn-orange w-100 mt-4">
                             <i class="bi bi-save me-2"></i> Simpan Perubahan
                         </button>
@@ -151,7 +186,26 @@
 
 <script>
 /* =======================
-    VARIABLE GLOBAL
+    LOGIKA BANK
+======================= */
+function checkBank(select) {
+    const inputLainnya = document.getElementById('input_bank_lainnya');
+    const manualInput = document.getElementById('nama_bank_manual');
+
+    if (select.value === 'lainnya') {
+        inputLainnya.style.display = 'block';
+        manualInput.setAttribute('required', 'required');
+        // Saat 'Lainnya' dipilih, kita akan menggunakan nilai dari manualInput di controller
+        // (atau kamu bisa atur logic manualInput menimpa select saat submit)
+    } else {
+        inputLainnya.style.display = 'none';
+        manualInput.removeAttribute('required');
+        manualInput.value = '';
+    }
+}
+
+/* =======================
+    VARIABLE GLOBAL MAP
 ======================= */
 var lat = '{{ $user->latitude ?? "-0.9471" }}';
 var lng = '{{ $user->longitude ?? "100.4172" }}';

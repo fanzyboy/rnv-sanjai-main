@@ -107,37 +107,52 @@ class AuthController extends Controller
     /**
      * 🔹 Profil user
      */
-    public function profile()
-    {
-        $user = Auth::user();
-        return view('auth.profile', compact('user'));
+   public function profile()
+{
+    $user = Auth::user();
+    return view('auth.profile', compact('user'));
+}
+
+/**
+ * 🔹 Update profil user
+ */
+public function updateProfile(Request $request)
+{
+    $request->validate([
+        'name'           => 'required|string|max:100',
+        'email'          => 'required|email|unique:users,email,' . Auth::id(),
+        'alamat'         => 'nullable|string|max:255',
+        'latitude'       => 'nullable|numeric',
+        'longitude'      => 'nullable|numeric',
+        'no_hp'          => 'nullable|string|max:20',
+
+        // Validasi input form (nama_bank_manual tidak perlu ada di DB)
+        'nomor_rekening'    => 'nullable|string|max:30',
+        'nama_bank'      => 'nullable|string|max:50',
+        'nama_bank_manual' => 'nullable|string|max:50',
+    ]);
+
+    $user = Auth::user();
+
+    // Tentukan nilai akhir untuk kolom nama_bank
+    $bankFinal = $request->nama_bank;
+    if ($request->nama_bank === 'lainnya') {
+        $bankFinal = $request->nama_bank_manual;
     }
 
-    /**
-     * 🔹 Update profil user
-     */
-    public function updateProfile(Request $request)
-    {
-        $request->validate([
-            'name'      => 'required|string|max:100',
-            'email'     => 'required|email|unique:users,email,' . Auth::id(),
-            'alamat'    => 'nullable|string|max:255',
-            'latitude'  => 'nullable|numeric',
-            'longitude' => 'nullable|numeric',
-            'no_hp'     => 'nullable|string|max:20',
-        ]);
+    $user->update([
+        'name'           => $request->name,
+        'email'          => $request->email,
+        'alamat'         => $request->alamat,
+        'latitude'       => $request->latitude,
+        'longitude'      => $request->longitude,
+        'no_hp'          => $request->no_hp,
+        'nomor_rekening'    => $request->nomor_rekening,
 
-        $user = Auth::user();
+        // Hanya satu kolom ini yang digunakan di database
+        'nama_bank'      => $bankFinal,
+    ]);
 
-        $user->update([
-            'name'      => $request->name,
-            'email'     => $request->email,
-            'alamat'    => $request->alamat,
-            'latitude'  => $request->latitude,
-            'longitude' => $request->longitude,
-            'no_hp'     => $request->no_hp,
-        ]);
-
-        return back()->with('success', 'Profil berhasil diperbarui!');
-    }
+    return back()->with('success', 'Profil berhasil diperbarui!');
+}
 }

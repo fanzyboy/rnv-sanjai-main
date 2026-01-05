@@ -24,7 +24,7 @@
 
         @foreach ($produk as $item)
         @php
-            $avgRating = round($item->ratings->avg('rating'), 1);
+            $avgRating = $item->ratings->avg('rating') ?? 0;
             $totalRating = $item->ratings->count();
         @endphp
 
@@ -47,31 +47,44 @@
                 {{-- BODY --}}
                 <div class="card-body d-flex flex-column p-2 p-md-3">
 
-                    <h5 class="fw-bold text-dark mb-1 fs-6">
+                    <h5 class="fw-bold text-dark mb-1 fs-6 text-truncate">
                         {{ $item->nama_produk }}
                     </h5>
 
-                    {{-- RATING --}}
-                    <div class="rating-box mb-1">
+                    {{-- RATING (IMPROVED) --}}
+                    <div class="rating-box mb-2">
                         @if($totalRating > 0)
-                            @for($i = 1; $i <= 5; $i++)
-                                <span class="star {{ $i <= floor($avgRating) ? 'filled' : '' }}">★</span>
-                            @endfor
-                            <small class="text-muted">
-                                {{ $avgRating }} ({{ $totalRating }})
+                            <div class="stars text-warning" style="font-size: 0.75rem;">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    @if ($i <= floor($avgRating))
+                                        <i class="fas fa-star"></i> {{-- Bintang Penuh --}}
+                                    @elseif ($avgRating > ($i - 1) && $avgRating < $i)
+                                        <i class="fas fa-star-half-alt"></i> {{-- Bintang Setengah --}}
+                                    @else
+                                        <i class="far fa-star text-muted"></i> {{-- Bintang Kosong --}}
+                                    @endif
+                                @endfor
+                            </div>
+                            <small class="text-muted" style="font-size: 0.7rem;">
+                                <strong>{{ number_format($avgRating, 1) }}</strong> ({{ $totalRating }})
                             </small>
                         @else
-                            <small class="text-muted">Belum ada rating</small>
+                            <div class="stars text-muted" style="font-size: 0.75rem;">
+                                @for ($i = 1; $i <= 5; $i++)
+                                    <i class="far fa-star"></i>
+                                @endfor
+                                <small class="ms-1" style="font-size: 0.7rem;">(0)</small>
+                            </div>
                         @endif
                     </div>
 
-                    <p class="text-muted mb-2" style="font-size:0.75rem;">
-                        {{ Str::limit($item->deskripsi, 40) }}
+                    <p class="text-muted mb-3" style="font-size:0.75rem; line-height: 1.2;">
+                        {{ Str::limit($item->deskripsi, 45) }}
                     </p>
 
                     <div class="d-grid gap-1 mt-auto">
                         <a href="{{ route('produk.show', $item->id) }}"
-                           class="btn btn-sm btn-warning fw-bold"
+                           class="btn btn-sm btn-warning fw-bold shadow-sm"
                            style="font-size:0.8rem;">
                             <i class="fas fa-shopping-cart me-1"></i>
                             Checkout
@@ -90,25 +103,28 @@
 <style>
 .product-card {
     transition: transform .2s ease, box-shadow .2s ease;
+    border: 1px solid rgba(0,0,0,.05) !important;
 }
 .product-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 .5rem 1rem rgba(0,0,0,.15)!important;
+    transform: translateY(-4px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.12)!important;
 }
 
 .rating-box {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: 6px;
+    min-height: 18px;
 }
 
-.star {
-    font-size: 14px;
-    color: #ddd;
+.stars {
+    display: inline-flex;
+    gap: 1px;
 }
 
-.star.filled {
-    color: #ffc107;
+/* Memastikan gambar tidak gepeng */
+.object-fit-cover {
+    object-fit: cover;
 }
 </style>
 @endsection

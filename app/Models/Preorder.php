@@ -12,8 +12,15 @@ class Preorder extends Model
         'user_id',
         'price_id',
         'qty',
+        'total_amount',
+        'bukti_transfer',
+        'metode_pembayaran',
+        'status',
         'tanggal_preorder',
         'deskripsi',
+        'refund_amount',
+        'bukti_admin',
+        'refund_at'
     ];
 
     // Relasi ke user
