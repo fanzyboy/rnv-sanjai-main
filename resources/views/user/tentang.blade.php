@@ -146,7 +146,7 @@
                             </div>
                             <div class="info-text">
                                 <h6>WhatsApp</h6>
-                                <p>+62 851-6575-5238</p>
+                                <p>+62 823-8326-1107</p>
                             </div>
                         </div>
 
