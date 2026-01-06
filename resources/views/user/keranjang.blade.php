@@ -61,12 +61,16 @@
                             </div>
 
                             <div class="act">
-                                {{-- Link hapus langsung ke ID database --}}
-                                <a href="{{ route('keranjang.remove', $item['id']) }}"
-                                   class="del text-decoration-none d-inline-block"
-                                   onclick="return confirm('Hapus item ini?')">
-                                    <i class="fas fa-trash-alt"></i><span class="d-none d-md-inline ms-1">Hapus</span>
-                                </a>
+                                {{-- PERBAIKAN: Menggunakan Form DELETE untuk keamanan --}}
+                                <form action="{{ route('keranjang.remove', $item['id']) }}" method="POST" class="d-inline" onsubmit="return confirm('Hapus item ini?')">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="del border-0 bg-transparent p-0">
+                                        <div class="del-btn-inner">
+                                            <i class="fas fa-trash-alt"></i><span class="d-none d-md-inline ms-1">Hapus</span>
+                                        </div>
+                                    </button>
+                                </form>
                             </div>
                         </div>
                     @endforeach
@@ -101,7 +105,7 @@
 </div>
 
 <style>
-/* CSS Anda tetap sama, tidak ada perubahan pada style */
+/* CSS Anda tetap sama */
 .hero{background:linear-gradient(135deg,#ee4d2d,#ff6b45);padding:40px 0;margin-bottom:30px;color:#fff}
 .hero .badge{display:inline-block;background:rgba(255,255,255,.2);padding:8px 20px;border-radius:50px;font-size:14px;margin-bottom:10px;backdrop-filter:blur(10px)}
 .hero h1{font-size:32px;font-weight:700;margin:0}
@@ -130,8 +134,11 @@
 .price small,.qty small,.total small{display:none;font-size:11px;color:#888;text-transform:uppercase;margin-bottom:4px}
 .qty .box{display:inline-block;padding:6px 16px;background:#f5f5f5;border-radius:6px;font-weight:500}
 .total strong{color:#ee4d2d;font-size:16px;font-weight:600}
-.del{background:#fff;border:1px solid #ddd;padding:8px 16px;border-radius:6px;color:#555;cursor:pointer;transition:all .2s; font-size: 14px;}
-.del:hover{color:#ee4d2d;border-color:#ee4d2d;background:#fff5f5}
+
+/* Penyesuaian sedikit pada button del agar terlihat seperti link semula */
+.del-btn-inner{border:1px solid #ddd;padding:8px 16px;border-radius:6px;color:#555;cursor:pointer;transition:all .2s; font-size: 14px;}
+.del-btn-inner:hover{color:#ee4d2d;border-color:#ee4d2d;background:#fff5f5}
+
 .summary .card{background:#fff;padding:24px;border-radius:12px;box-shadow:0 2px 8px rgba(0,0,0,.08);position:sticky;top:100px}
 .summary h5{font-size:18px;font-weight:600;margin:0 0 20px;display:flex;align-items:center}
 .summary h5 i{color:#ee4d2d}
