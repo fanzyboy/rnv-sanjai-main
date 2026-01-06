@@ -122,3 +122,7 @@ Route::get('/auth/google/callback', [SocialiteController::class, 'handleGoogleCa
 
 Route::get('/laporan/export', [AdminReportController::class, 'export'])
     ->name('admin.laporan.export');
+
+
+    // Route untuk Katalog Produk User
+Route::get('/produk', [ProductController::class, 'userIndex'])->name('produk');

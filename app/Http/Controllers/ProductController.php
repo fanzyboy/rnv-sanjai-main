@@ -124,4 +124,27 @@ class ProductController extends Controller
 
         return view('user.show', compact('product'));
     }
+
+    // Menampilkan semua produk untuk Sisi User (Katalog)
+public function userIndex(Request $request)
+{
+    // Menggunakan query builder agar bisa ditambah kondisi (search/filter)
+    $query = Product::with('ratings', 'prices');
+
+    // 1. Logika Pencarian Nama
+    if ($request->has('search') && $request->search != '') {
+        $query->where('nama_produk', 'like', '%' . $request->search . '%');
+    }
+
+    // 2. Logika Filter Jenis (Opsional, jika ingin menambahkan filter kategori)
+    if ($request->has('jenis') && $request->jenis != '') {
+        $query->where('jenis_produk', $request->jenis);
+    }
+
+    // Ambil data produk
+    $produk = $query->get();
+
+    // Pastikan return ke view yang benar (view katalog user Anda)
+    return view('user.produk', compact('produk'));
+}
 }
