@@ -23,14 +23,14 @@
                             <div class="stat-label">Pelanggan Puas</div>
                         </div>
                         <div class="stat-item">
-                            <div class="stat-number">5</div>
+                            <div class="stat-number">3</div>
                             <div class="stat-label">Varian Rasa</div>
                         </div>
                     </div>
                 </div>
                 <div class="col-lg-6">
                     <div class="hero-image">
-                        <img src="{{ asset('asset/sanjai.jpeg') }}" alt="R&V Sanjai" class="img-fluid">
+                        <img src="{{ asset('asset/anim.png') }}" alt="R&V Sanjai" class="img-fluid">
                         <div class="floating-card">
                             <div class="card-icon">
                                 <i class="fas fa-award"></i>

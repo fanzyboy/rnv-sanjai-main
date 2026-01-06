@@ -64,7 +64,7 @@
                             <i class="fas fa-shopping-bag"></i>
                         </div>
                     </div>
-                    <h5 class="mb-1 opacity-75">Total Pesanan</h5>
+                    <h5 class="mb-1 opacity-75">Total Pesanan Selesai</h5>
                     <h2 class="fw-bold mb-0">{{ $totalOrders }}</h2>
                 </div>
             </div>
@@ -108,11 +108,15 @@
                     </div>
                     <h5 class="mb-1 opacity-75">Terlaris</h5>
                     <h4 class="fw-bold mb-0 text-truncate">
-                       {{ $bestProduct && $bestProduct->product ? $bestProduct->product->nama_produk : 'N/A' }}
-                    </h4>
-                    @if($bestProduct)
-                        <small class="opacity-75">{{ $bestProduct->total_sold }} terjual</small>
-                    @endif
+    {{ $bestProduct ? $bestProduct->nama_produk : 'N/A' }}
+</h4>
+@if($bestProduct)
+    <small class="opacity-75">
+        <i class="fas fa-star text-warning"></i>
+        {{ number_format($bestProduct->avg_rating, 1) }} / 5.0
+        ({{ $bestProduct->ratings_count }} Ulasan)
+    </small>
+@endif
                 </div>
             </div>
         </div>

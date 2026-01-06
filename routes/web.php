@@ -119,3 +119,6 @@ Route::prefix('admin')
 */
 Route::get('/auth/google/redirect', [SocialiteController::class, 'redirectToGoogle'])->name('google.redirect');
 Route::get('/auth/google/callback', [SocialiteController::class, 'handleGoogleCallback'])->name('google.callback');
+
+Route::get('/laporan/export', [AdminReportController::class, 'export'])
+    ->name('admin.laporan.export');

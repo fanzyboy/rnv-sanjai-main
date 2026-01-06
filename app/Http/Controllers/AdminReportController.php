@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Models\Order;
 use App\Models\Preorder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Http\Request;
+
 
 class AdminReportController extends Controller
 {
@@ -85,4 +87,56 @@ class AdminReportController extends Controller
             'preorders'
         ));
     }
+
+    public function export(Request $request)
+{
+    $month = $request->month;
+    $year = $request->year;
+
+    // Ambil data yang sama dengan yang tampil di tabel
+    $orders = \App\Models\Order::where('status', 'selesai');
+    $preorders = \App\Models\Preorder::where('status', 'selesai');
+
+    if ($month) {
+        $orders->whereMonth('created_at', $month);
+        $preorders->whereMonth('created_at', $month);
+    }
+    if ($year) {
+        $orders->whereYear('created_at', $year);
+        $preorders->whereYear('created_at', $year);
+    }
+
+    $dataOrders = $orders->get();
+    $dataPreorders = $preorders->get();
+
+    // Nama file
+    $fileName = 'Laporan_Penjualan_' . ($month ?? 'Semua') . '_' . ($year ?? 'Semua') . '.csv';
+
+    $headers = [
+        "Content-type"        => "text/csv",
+        "Content-Disposition" => "attachment; filename=$fileName",
+        "Pragma"              => "no-cache",
+        "Cache-Control"       => "must-revalidate, post-check=0, pre-check=0",
+        "Expires"             => "0"
+    ];
+
+    $columns = ['Tipe', 'Kode', 'Pelanggan', 'Total Bayar', 'Tanggal'];
+
+    $callback = function() use($dataOrders, $dataPreorders, $columns) {
+        $file = fopen('php://output', 'w');
+        fputcsv($file, $columns);
+
+        foreach ($dataOrders as $order) {
+            fputcsv($file, ['Order', '#ORD'.$order->id, $order->user->name ?? '-', $order->total_amount, $order->created_at->format('d-m-Y')]);
+        }
+
+        foreach ($dataPreorders as $po) {
+            fputcsv($file, ['Preorder', '#PO'.$po->id, $po->user->name ?? '-', $po->total_amount, $po->created_at->format('d-m-Y')]);
+        }
+
+        fclose($file);
+    };
+
+    return response()->stream($callback, 200, $headers);
+}
 }

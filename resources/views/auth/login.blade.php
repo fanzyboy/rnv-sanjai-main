@@ -44,9 +44,10 @@
                     <input class="form-check-input" type="checkbox" id="remember" name="remember" style="border-color: #ff6b35;">
                     <label class="form-check-label small text-muted" for="remember">Ingat saya</label>
                 </div>
-                <a href="#" class="small text-decoration-none fw-semibold" style="color: #ff6b35;">Lupa password?</a>
+                {{-- <a href="#" class="small text-decoration-none fw-semibold" style="color: #ff6b35;">Lupa password?</a> --}}
             </div>
 
+            <button type="submit" class="btn w-100 py-3 fw-semibold text-white mb-3 rounded-3 border-0"
             <button type="submit" class="btn w-100 py-3 fw-semibold text-white mb-3 rounded-3 border-0"
                 style="background: linear-gradient(135deg, #ff6b35, #ffc107); transition: all 0.3s ease;">
                 <i class="fas fa-sign-in-alt me-2"></i>Masuk Sekarang

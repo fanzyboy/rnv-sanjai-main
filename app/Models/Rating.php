@@ -13,6 +13,7 @@ class Rating extends Model
         'user_id',
         'order_id',
         'product_id',
+        'preorder_id',
         'rating',
         'review'
     ];
@@ -33,5 +34,9 @@ class Rating extends Model
     public function product()
     {
         return $this->belongsTo(Product::class);
+    }
+     public function preorder()
+    {
+        return $this->belongsTo(Preorder::class);
     }
 }

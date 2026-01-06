@@ -133,7 +133,10 @@ class HomeController extends Controller
         // ===============================
         // TOTAL PESANAN SELESAI
         // ===============================
-        $totalOrders = Order::where('status', 'selesai')->count();
+       $totalOrders =
+    Order::where('status', 'selesai')->count()
+    + Preorder::where('status', 'selesai')->count();
+
 
         // ===============================
         // TOTAL PENDAPATAN ORDERS (SELESAI)
@@ -159,29 +162,37 @@ class HomeController extends Controller
         // ===============================
         // PESANAN PENDING
         // ===============================
-        $pendingOrders = Order::where('status', 'pending')->count();
+        $pendingOrders =
+    Order::where('status', 'pending')->count()
+    + Preorder::where('status', 'pending')->count();
+
 
         // ===============================
         // PRODUK TERLARIS (DARI ORDER SELESAI)
         // ===============================
-        $bestProduct = OrderItem::select('product_id')
-            ->selectRaw('SUM(quantity) as total_sold')
-            ->join('orders', 'orders.id', '=', 'order_items.order_id')
-            ->where('orders.status', 'selesai')
-            ->with('product')
-            ->groupBy('product_id')
-            ->orderByDesc('total_sold')
+        // $bestProduct = OrderItem::select('product_id')
+        //     ->selectRaw('SUM(quantity) as total_sold')
+        //     ->join('orders', 'orders.id', '=', 'order_items.order_id')
+        //     ->where('orders.status', 'selesai')
+        //     ->with('product')
+        //     ->groupBy('product_id')
+        //     ->orderByDesc('total_sold')
+        //     ->first();
+
+        $bestProduct = Product::withAvg('ratings as avg_rating', 'rating')
+            ->withCount('ratings')
+            ->orderByDesc('avg_rating')
+            ->orderByDesc('ratings_count') // Jika rata-rata sama, pilih yang ulasannya lebih banyak
             ->first();
 
         // ===============================
         // PESANAN TERBARU (SELESAI)
         // ===============================
-        $latestOrders = Order::with('user')
-            ->where('status', 'selesai')
-            ->latest()
-            ->take(5)
-            ->get();
+      $orders = Order::with('user')->latest()->take(5)->get();
+    $preorders = Preorder::with('user')->latest()->take(5)->get();
 
+    // Menggabungkan dan mengurutkan berdasarkan tanggal terbaru
+    $latestOrders = $orders->concat($preorders)->sortByDesc('created_at')->take(5);
         return view('admin.dashboard', compact(
             'totalOrders',
             'totalRevenue',

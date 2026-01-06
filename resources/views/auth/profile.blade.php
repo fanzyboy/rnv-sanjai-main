@@ -168,9 +168,84 @@
                             </div>
                         </div>
 
+   {{-- Keamanan Section --}}
+<div class="section-header mb-4 mt-5">
+    <h5 class="fw-bold text-orange mb-1"><i class="bi bi-shield-lock-fill me-2"></i>Keamanan Akun</h5>
+    <div class="divider"></div>
+</div>
+
+<div class="row g-3 mb-4">
+    @if($user->password)
+        <div class="col-12 mb-2">
+            <label class="form-label fw-semibold">Password Saat Ini</label>
+            <div class="input-group shadow-sm has-validation">
+                <span class="input-group-text bg-white border-end-0 @error('current_password') border-danger @enderror"><i class="bi bi-lock text-muted"></i></span>
+                <input type="password" name="current_password" id="current_password"
+                       class="form-control custom-input border-start-0 border-end-0 @error('current_password') is-invalid @enderror"
+                       placeholder="Masukkan password lama untuk verifikasi">
+                <button class="btn btn-outline-light border-start-0 text-muted bg-white border-end custom-input-end @error('current_password') border-danger @enderror"
+                        type="button" onclick="togglePassword('current_password', this)">
+                    <i class="bi bi-eye"></i>
+                </button>
+                @error('current_password')
+                    <div class="invalid-feedback">
+                        {{ $message }}
+                    </div>
+                @enderror
+            </div>
+            <small class="text-muted">Wajib diisi jika ingin mengganti password baru</small>
+        </div>
+    @else
+        <div class="col-12 mb-2">
+            <div class="alert alert-warning border-0 shadow-sm small">
+                <i class="bi bi-info-circle-fill me-2"></i> Anda belum mengatur password (Login via Sosial). Silakan buat password baru.
+            </div>
+        </div>
+    @endif
+
+   {{-- Password Baru --}}
+<div class="col-md-6">
+    <label class="form-label fw-semibold">Password Baru</label>
+    <div class="input-group shadow-sm has-validation">
+        <span class="input-group-text bg-white border-end-0">
+            <i class="bi bi-key-fill text-muted"></i>
+        </span>
+        <input type="password" name="password" id="password"
+               class="form-control custom-input border-start-0 border-end-0 @error('password') is-invalid @enderror"
+               placeholder="Masukkan password baru">
+        <button class="btn btn-outline-light border-start-0 bg-white border-end"
+                type="button" onclick="togglePassword('password', this)">
+            <i class="bi bi-eye"></i>
+        </button>
+
+        @error('password')
+            <div class="invalid-feedback d-block">
+                {{ $message }}
+            </div>
+        @enderror
+    </div>
+</div>
+
+
+    <div class="col-md-6">
+        <label class="form-label fw-semibold">Konfirmasi Password Baru</label>
+        <div class="input-group shadow-sm">
+            <span class="input-group-text bg-white border-end-0"><i class="bi bi-key-fill text-muted"></i></span>
+            <input type="password" name="password_confirmation" id="password_confirmation"
+                   class="form-control custom-input border-start-0 border-end-0"
+                   placeholder="Ulangi password baru">
+            <button class="btn btn-outline-light border-start-0 text-muted bg-white border-end custom-input-end"
+                    type="button" onclick="togglePassword('password_confirmation', this)">
+                <i class="bi bi-eye"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
                         <button type="submit" class="btn btn-orange w-100 mt-4">
                             <i class="bi bi-save me-2"></i> Simpan Perubahan
                         </button>
+
 
                     </form>
 
@@ -185,6 +260,21 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <script>
+
+    function togglePassword(inputId, btn) {
+    const passwordInput = document.getElementById(inputId);
+    const icon = btn.querySelector('i');
+
+    if (passwordInput.type === "password") {
+        passwordInput.type = "text";
+        icon.classList.remove("bi-eye");
+        icon.classList.add("bi-eye-slash");
+    } else {
+        passwordInput.type = "password";
+        icon.classList.remove("bi-eye-slash");
+        icon.classList.add("bi-eye");
+    }
+}
 /* =======================
     LOGIKA BANK
 ======================= */
@@ -483,6 +573,8 @@ document.getElementById("desa_kelurahan").addEventListener("input", function() {
     } else {
         document.getElementById("alamat").value = this.value;
     }
+
+
 });
 </script>
 
@@ -572,6 +664,19 @@ document.getElementById("desa_kelurahan").addEventListener("input", function() {
 .alert {
     border-radius: 10px;
     padding: 14px 18px;
+}
+
+/* Menghindari border double saat error */
+.is-invalid {
+    border-color: #dc3545 !important;
+    z-index: 2;
+}
+
+/* Pastikan pesan error tampil di bawah input group */
+.invalid-feedback {
+    display: block;
+    width: 100%;
+    margin-top: 0.25rem;
 }
 
 @media (max-width: 768px) {

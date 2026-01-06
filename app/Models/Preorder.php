@@ -20,7 +20,9 @@ class Preorder extends Model
         'deskripsi',
         'refund_amount',
         'bukti_admin',
-        'refund_at'
+        'refund_at',
+        'nomor_rekening',
+        'nama_bank'
     ];
 
     // Relasi ke user
@@ -33,5 +35,9 @@ class Preorder extends Model
     public function price()
     {
         return $this->belongsTo(ProductPrice::class, 'price_id');
+    }
+    public function rating()
+    {
+        return $this->hasOne(Rating::class);
     }
 }

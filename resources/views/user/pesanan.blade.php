@@ -23,25 +23,23 @@
         </div>
     @endif
 
-    {{-- ======================== ORDER KOSONG ======================== --}}
+    {{-- ======================== EMPTY STATE ======================== --}}
     @if($orders->isEmpty() && $preorders->isEmpty())
-        <div class="text-center py-5">
+        <div class="text-center py-5 shadow-sm bg-white rounded-3">
             <div class="empty-state-icon mb-3">
-                <svg width="80" height="80" fill="currentColor" class="text-orange" viewBox="0 0 16 16">
-                    <path d="M0 1.5A.5.5 0 0 1 .5 1H2a.5.5 0 0 1 .485.379L2.89 3H14.5a.5.5 0 0 1 .491.592l-1.5 8A.5.5 0 0 1 13 12H4a.5.5 0 0 1-.491-.408L2.01 3.607 1.61 2H.5a.5.5 0 0 1-.5-.5zM5 12a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm7 0a2 2 0 1 0 0 4 2 2 0 0 0 0-4zm-7 1a1 1 0 1 1 0 2 1 1 0 0 1 0-2zm7 0a1 1 0 1 1 0 2 1 1 0 0 1 0-2z"/>
-                </svg>
+                <i class="bi bi-cart-x text-orange" style="font-size: 4rem;"></i>
             </div>
             <h5 class="text-dark fw-bold">Belum Ada Pesanan</h5>
-            <p class="text-muted">Kamu belum memiliki pesanan atau preorder.</p>
+            <p class="text-muted">Kamu belum memiliki riwayat pesanan atau preorder.</p>
+            <a href="{{ route('produk') }}" class="btn btn-orange px-4 fw-bold">Belanja Sekarang</a>
         </div>
     @endif
 
     {{-- ======================== ORDER SECTION ======================== --}}
     @if(!$orders->isEmpty())
-        <h4 class="fw-bold text-dark mb-3 mt-4">📦 Order</h4>
-
+        <h4 class="fw-bold text-dark mb-3 mt-4"><i class="bi bi-box-seam text-orange me-2"></i>Daftar Pesanan</h4>
         @foreach ($orders as $order)
-            <div class="card border-0 shadow-sm mb-3 order-card">
+            <div class="card border-0 shadow-sm mb-4 order-card">
                 <div class="card-body p-4">
                     @php
                         $payment = $order->payments->first();
@@ -51,15 +49,12 @@
 
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                            <h5 class="mb-1 fw-bold text-dark">
-                                <span class="text-orange">#{{ $order->id }}</span>
-                            </h5>
+                            <h5 class="mb-1 fw-bold text-dark">#{{ $order->id }}</h5>
                             <small class="text-muted">
-                                <i class="bi bi-calendar3 text-orange"></i> {{ $order->created_at->format('d M Y, H:i') }}
+                                <i class="bi bi-calendar3"></i> {{ $order->created_at->format('d M Y, H:i') }}
+                                <span class="mx-2">|</span>
+                                <i class="bi bi-credit-card"></i> {{ ucfirst($paymentMethod) }}
                             </small>
-                            <span class="ms-3 small text-muted">
-                                | Metode: **{{ ucfirst($paymentMethod) }}**
-                            </span>
                         </div>
                         <span class="badge rounded-pill px-3 py-2 status-badge
                             @if($order->status == 'pending') badge-pending
@@ -72,64 +67,36 @@
                         </span>
                     </div>
 
-                    {{-- LOGIKA REFUND (DARI UI LAMA ANDA) --}}
                     @if($order->status == 'ditolak' && $isTransfer && $order->bukti_admin)
                         <div class="alert alert-danger p-3 mb-3 border-danger bg-light-red">
-                            <h6 class="text-danger fw-bold mb-2">
-                                <i class="bi bi-x-circle-fill"></i> Pesanan Ditolak & Sudah Direfund
-                            </h6>
-                            <p class="small mb-2">
-                                Sejumlah **Rp {{ number_format($order->refund_amount ?? 0, 0, ',', '.') }}** telah dikembalikan.
-                            </p>
-                            <a href="{{ Storage::url($order->bukti_admin) }}" target="_blank" class="btn btn-sm btn-outline-danger mt-1">
-                                <i class="bi bi-file-earmark-image"></i> Lihat Bukti Refund Admin
+                            <h6 class="text-danger fw-bold mb-2"><i class="bi bi-info-circle-fill"></i> Pesanan Ditolak & Sudah Direfund</h6>
+                            <p class="small mb-2 text-dark">Dana sebesar <strong>Rp {{ number_format($order->refund_amount ?? $order->total_amount, 0, ',', '.') }}</strong> telah ditransfer kembali.</p>
+                            <a href="{{ Storage::url($order->bukti_admin) }}" target="_blank" class="btn btn-sm btn-danger fw-bold">
+                                <i class="bi bi-image me-1"></i> Lihat Bukti Refund
                             </a>
-                        </div>
-                    @elseif($order->status == 'ditolak' && !$isTransfer)
-                        <div class="alert alert-danger p-3 mb-3 border-danger bg-light-red">
-                            <h6 class="text-danger fw-bold mb-0">
-                                <i class="bi bi-x-circle-fill"></i> Pesanan Ditolak (Non-Transfer)
-                            </h6>
-                            <p class="small mb-0">Order ini dibatalkan oleh Admin.</p>
                         </div>
                     @endif
 
-                    {{-- ITEMS --}}
-                    <div class="border-top border-bottom py-3 my-3 order-items">
+                    <div class="border-top border-bottom py-3 my-3">
                         @foreach ($order->items as $item)
-                            <div class="d-flex justify-content-between align-items-center mb-3 pb-3 item-row">
+                            <div class="d-flex justify-content-between align-items-center mb-3 item-row">
                                 <div class="flex-grow-1">
-                                    <h6 class="mb-2 fw-semibold text-dark">{{ $item->product->nama_produk }}</h6>
-                                    <div class="d-flex flex-wrap gap-3 text-muted small">
-                                        <span class="item-info">
-                                            <i class="bi bi-tag-fill text-orange"></i>
-                                            Rp {{ number_format($item->price->harga, 0, ',', '.') }}
-                                        </span>
-                                        @if(!empty($item->price->berat))
-                                        <span class="item-info">
-                                            <i class="bi bi-box-seam text-orange"></i>
-                                            {{ $item->price->berat }}g
-                                        </span>
-                                        @endif
-                                        <span class="item-info">
-                                            <i class="bi bi-cart-check-fill text-orange"></i>
-                                            Qty: {{ $item->quantity }}
-                                        </span>
+                                    <h6 class="mb-1 fw-bold">{{ $item->product->nama_produk }}</h6>
+                                    <div class="small text-muted">
+                                        {{ $item->quantity }} pcs x Rp {{ number_format($item->price->harga, 0, ',', '.') }}
                                     </div>
                                 </div>
-
-                                {{-- LOGIKA RATING (DISEBELAH KANAN ITEM) --}}
                                 @if($order->status == 'selesai')
-                                    @php
-                                        $sudahRating = App\Models\Rating::where('order_id', $order->id)->where('product_id', $item->product_id)->first();
-                                    @endphp
-                                    <div class="ms-3">
+                                    @php $sudahRating = App\Models\Rating::where('order_id', $order->id)->where('product_id', $item->product_id)->first(); @endphp
+                                    <div>
                                         @if($sudahRating)
                                             <div class="text-warning small">
                                                 @for($i=1; $i<=5; $i++) <i class="bi bi-star{{ $i <= $sudahRating->rating ? '-fill' : '' }}"></i> @endfor
                                             </div>
                                         @else
-                                            <button class="btn btn-sm btn-orange-outline fw-bold" onclick="openRatingModal('{{ $order->id }}', '{{ $item->product_id }}', '{{ $item->product->nama_produk }}')">
+                                            {{-- Perbaikan Parameter di sini --}}
+                                            <button class="btn btn-sm btn-orange-outline fw-bold"
+                                                onclick="openRatingModal('{{ $order->id }}', '{{ $item->product_id }}', '', '{{ $item->product->nama_produk }}')">
                                                 Beri Rating
                                             </button>
                                         @endif
@@ -140,29 +107,29 @@
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center total-section">
-                        <span class="text-muted fw-semibold">Total Pembayaran</span>
-                        <h5 class="mb-0 fw-bold text-orange">
-                            Rp {{ number_format($order->total_amount, 0, ',', '.') }}
-                        </h5>
+                        <span class="fw-semibold">Total Pembayaran</span>
+                        <h5 class="mb-0 fw-bold text-orange">Rp {{ number_format($order->total_amount, 0, ',', '.') }}</h5>
                     </div>
                 </div>
             </div>
         @endforeach
     @endif
 
-    {{-- ======================== PREORDER SECTION (DENGAN RATING) ======================== --}}
+    {{-- ======================== PREORDER SECTION ======================== --}}
     @if(!$preorders->isEmpty())
-        <h4 class="fw-bold text-dark mb-3 mt-5">📝 Preorder</h4>
+        <h4 class="fw-bold text-dark mb-3 mt-5"><i class="bi bi-clipboard-check text-orange me-2"></i>Daftar Preorder</h4>
         @foreach ($preorders as $po)
-            <div class="card border-0 shadow-sm mb-3 order-card">
+            <div class="card border-0 shadow-sm mb-4 order-card">
                 <div class="card-body p-4">
+                    @php $isTransferPO = strtolower($po->metode_pembayaran) == 'transfer'; @endphp
+
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                            <h5 class="mb-1 fw-bold text-dark">
-                                <span class="text-orange">#PO{{ $po->id }}</span>
-                            </h5>
+                            <h5 class="mb-1 fw-bold text-dark text-orange">#PO-{{ $po->id }}</h5>
                             <small class="text-muted">
-                                <i class="bi bi-calendar3 text-orange"></i> {{ $po->tanggal_preorder }}
+                                <i class="bi bi-calendar-event"></i> {{ \Carbon\Carbon::parse($po->tanggal_preorder)->format('d M Y') }}
+                                <span class="mx-2">|</span>
+                                <i class="bi bi-wallet2"></i> {{ strtoupper($po->metode_pembayaran) }}
                             </small>
                         </div>
                         <span class="badge rounded-pill px-3 py-2 status-badge
@@ -175,39 +142,35 @@
                         </span>
                     </div>
 
-                    <div class="border-top border-bottom py-3 my-3 order-items">
-                        <div class="d-flex justify-content-between align-items-center mb-3 pb-3 item-row">
-                            <div class="flex-grow-1">
-                                <h6 class="mb-2 fw-semibold text-dark">{{ $po->price->product->nama_produk }}</h6>
-                                <div class="d-flex flex-wrap gap-3 text-muted small">
-                                    <span class="item-info">
-                                        <i class="bi bi-tag-fill text-orange"></i>
-                                        Variasi: {{ $po->price->variasi }}
-                                    </span>
-                                    <span class="item-info">
-                                        <i class="bi bi-cart-check-fill text-orange"></i>
-                                        Qty: {{ $po->qty }}
-                                    </span>
-                                </div>
-                                @if($po->deskripsi)
-                                <p class="mt-2 small text-muted">
-                                    <i class="bi bi-chat-left-text text-orange"></i> {{ $po->deskripsi }}
-                                </p>
-                                @endif
-                            </div>
+                    @if($po->status == 'ditolak' && $isTransferPO && $po->bukti_admin)
+                        <div class="alert alert-danger p-3 mb-3 border-danger bg-light-red">
+                            <h6 class="text-danger fw-bold mb-2"><i class="bi bi-info-circle-fill"></i> Preorder Ditolak & Refund Selesai</h6>
+                            <p class="small mb-2 text-dark">Dana telah dikirim kembali ke rekening Anda.</p>
+                            <a href="{{ Storage::url($po->bukti_admin) }}" target="_blank" class="btn btn-sm btn-danger fw-bold">
+                                <i class="bi bi-image me-1"></i> Lihat Bukti Refund
+                            </a>
+                        </div>
+                    @endif
 
-                            {{-- RATING UNTUK PREORDER --}}
+                    <div class="border-top border-bottom py-3 my-3">
+                        <div class="d-flex justify-content-between align-items-center item-row">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1 fw-bold">{{ $po->price->product->nama_produk }}</h6>
+                                <div class="small text-muted">
+                                    {{ $po->qty }} pcs | Variasi: {{ $po->price->berat ?? $po->price->variasi }}g
+                                </div>
+                            </div>
                             @if($po->status == 'selesai')
-                                @php
-                                    $sudahRatingPO = App\Models\Rating::where('order_id', $po->id)->where('product_id', $po->price->product_id)->first();
-                                @endphp
-                                <div class="ms-3">
+                                @php $sudahRatingPO = App\Models\Rating::where('preorder_id', $po->id)->first(); @endphp
+                                <div>
                                     @if($sudahRatingPO)
                                         <div class="text-warning small">
                                             @for($i=1; $i<=5; $i++) <i class="bi bi-star{{ $i <= $sudahRatingPO->rating ? '-fill' : '' }}"></i> @endfor
                                         </div>
                                     @else
-                                        <button class="btn btn-sm btn-orange-outline fw-bold" onclick="openRatingModal('{{ $po->id }}', '{{ $po->price->product_id }}', '{{ $po->price->product->nama_produk }}')">
+                                        {{-- Perbaikan Parameter di sini --}}
+                                        <button class="btn btn-sm btn-orange-outline fw-bold"
+                                            onclick="openRatingModal('', '{{ $po->price->product_id }}', '{{ $po->id }}', '{{ $po->price->product->nama_produk }}')">
                                             Beri Rating
                                         </button>
                                     @endif
@@ -217,8 +180,8 @@
                     </div>
 
                     <div class="d-flex justify-content-between align-items-center total-section">
-                        <span class="text-muted fw-semibold">Status</span>
-                        <h6 class="mb-0 fw-bold text-orange">{{ ucfirst($po->status) }}</h6>
+                        <span class="fw-semibold">Total Preorder</span>
+                        <h5 class="mb-0 fw-bold text-orange">Rp {{ number_format($po->total_amount, 0, ',', '.') }}</h5>
                     </div>
                 </div>
             </div>
@@ -226,7 +189,7 @@
     @endif
 </div>
 
-{{-- ======================== MODAL RATING (POPUP) ======================== --}}
+{{-- ======================== MODAL RATING ======================== --}}
 <div class="modal fade" id="ratingModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content border-0 shadow-lg">
@@ -239,24 +202,23 @@
                 <div class="modal-body p-4 text-center">
                     <input type="hidden" name="order_id" id="modal_order_id">
                     <input type="hidden" name="product_id" id="modal_product_id">
+                    <input type="hidden" name="preorder_id" id="modal_preorder_id">
                     <input type="hidden" name="rating" id="modal_rating_value" value="5">
 
                     <h5 id="modal_product_name" class="fw-bold text-dark mb-4">Nama Produk</h5>
 
                     <div class="star-rating-box mb-4">
                         <div class="stars-input d-flex justify-content-center gap-2">
-                            <i class="bi bi-star-fill clickable-star" data-value="1"></i>
-                            <i class="bi bi-star-fill clickable-star" data-value="2"></i>
-                            <i class="bi bi-star-fill clickable-star" data-value="3"></i>
-                            <i class="bi bi-star-fill clickable-star" data-value="4"></i>
-                            <i class="bi bi-star-fill clickable-star" data-value="5"></i>
+                            @for($i=1; $i<=5; $i++)
+                                <i class="bi bi-star-fill clickable-star" data-value="{{ $i }}"></i>
+                            @endfor
                         </div>
                         <p class="mt-2 fw-bold text-orange" id="rating-text">Sangat Puas</p>
                     </div>
 
                     <div class="form-group text-start">
                         <label class="small fw-bold text-muted mb-2">Tulis ulasan Anda (Opsional)</label>
-                        <textarea name="review" class="form-control" rows="3" placeholder="Bagikan pengalaman kamu memakai produk ini..."></textarea>
+                        <textarea name="review" class="form-control" rows="3" placeholder="Bagikan pengalaman kamu..."></textarea>
                     </div>
                 </div>
                 <div class="modal-footer border-0">
@@ -268,75 +230,44 @@
     </div>
 </div>
 
-{{-- ======================== CSS LAMA + RATING ======================== --}}
+{{-- ======================== STYLES ======================== --}}
 <style>
-:root {
-    --orange-primary: #ff6b35;
-    --orange-light: #fff4f0;
-    --red-light: #f8d7da;
-}
-
+:root { --orange-primary: #ff6b35; --orange-light: #fff4f0; --red-light: #fff5f5; }
 .text-orange { color: var(--orange-primary) !important; }
 .bg-orange { background-color: var(--orange-primary) !important; }
 .btn-orange { background: var(--orange-primary); color: white; border: none; }
-.btn-orange:hover { background: #e85a2a; color: white; }
-
-.btn-orange-outline {
-    border: 2px solid var(--orange-primary);
-    color: var(--orange-primary);
-    background: transparent;
-    transition: 0.3s;
-}
+.btn-orange:hover { background: #e85a2a; color: white; transform: scale(1.02); }
+.btn-orange-outline { border: 2px solid var(--orange-primary); color: var(--orange-primary); background: transparent; }
 .btn-orange-outline:hover { background: var(--orange-primary); color: white; }
-
-/* CSS BINTANG POPUP */
-.clickable-star {
-    font-size: 2.8rem;
-    color: #dee2e6;
-    cursor: pointer;
-    transition: transform 0.2s, color 0.2s;
-}
-.clickable-star.active { color: #ffc107 !important; }
-.clickable-star:hover { transform: scale(1.1); }
-
-.order-card {
-    transition: all 0.3s ease;
-    border-left: 4px solid transparent !important;
-}
-.order-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 .75rem 2rem rgba(255, 107, 53, 0.15) !important;
-    border-left: 4px solid var(--orange-primary) !important;
-}
-
-.status-badge { font-size: 0.8rem; font-weight: 600; letter-spacing: 0.3px; }
-.badge-pending { background: #ffc107; color:#000; }
-.badge-proses { background: #ff6b35; color:#fff; }
-.badge-kirim { background: #17a2b8; color:#fff; }
-.badge-selesai { background: #28a745; color:#fff; }
-.badge-batal { background: #dc3545; color:#fff; }
-
-.bg-light-red { background-color: var(--red-light) !important; }
-.item-row { border-bottom: 1px dashed #e9ecef; }
-.item-row:last-child { border-bottom: none !important; }
-.item-info { display: inline-flex; align-items: center; gap: 5px; }
-.total-section { background: var(--orange-light); padding: 15px; border-radius: 8px; margin-top: 10px; }
-
-.empty-state-icon { animation: float 3s ease-in-out infinite; }
-@keyframes float {
-    0%,100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-}
+.order-card { border-radius: 12px; transition: 0.3s; border-left: 5px solid transparent !important; }
+.order-card:hover { box-shadow: 0 10px 20px rgba(255, 107, 53, 0.1) !important; border-left: 5px solid var(--orange-primary) !important; }
+.status-badge { font-size: 0.75rem; font-weight: 700; }
+.badge-pending { background: #fff3cd; color: #856404; }
+.badge-proses { background: #cfe2ff; color: #084298; }
+.badge-kirim { background: #d1ecf1; color: #0c5460; }
+.badge-selesai { background: #d4edda; color: #155724; }
+.badge-batal { background: #f8d7da; color: #721c24; }
+.bg-light-red { background-color: var(--red-light) !important; border: 1px solid #f5c6cb; }
+.total-section { background: var(--orange-light); padding: 15px; border-radius: 10px; }
+.clickable-star { font-size: 2.5rem; color: #e9ecef; cursor: pointer; transition: 0.2s; }
+.clickable-star.active { color: #ffc107; }
 </style>
 
-{{-- ======================== JS RATING ======================== --}}
+{{-- ======================== SCRIPTS ======================== --}}
 <script>
-    function openRatingModal(orderId, productId, productName) {
+    function openRatingModal(orderId, productId, preorderId, productName) {
+        // Set Value ke Hidden Input
         document.getElementById('modal_order_id').value = orderId;
         document.getElementById('modal_product_id').value = productId;
+        document.getElementById('modal_preorder_id').value = preorderId;
         document.getElementById('modal_product_name').innerText = productName;
+
+        // Reset Bintang ke 5
         updateStars(5);
-        new bootstrap.Modal(document.getElementById('ratingModal')).show();
+
+        // Tampilkan Modal
+        var myModal = new bootstrap.Modal(document.getElementById('ratingModal'));
+        myModal.show();
     }
 
     const starItems = document.querySelectorAll('.clickable-star');
@@ -346,24 +277,14 @@
         star.addEventListener('click', function() {
             updateStars(this.getAttribute('data-value'));
         });
-        star.addEventListener('mouseover', function() {
-            highlightStars(this.getAttribute('data-value'));
-        });
-        star.addEventListener('mouseout', function() {
-            highlightStars(document.getElementById('modal_rating_value').value);
-        });
     });
-
-    function highlightStars(value) {
-        starItems.forEach(s => {
-            s.classList.toggle('active', s.getAttribute('data-value') <= value);
-        });
-    }
 
     function updateStars(value) {
         document.getElementById('modal_rating_value').value = value;
         document.getElementById('rating-text').innerText = ratingTexts[value];
-        highlightStars(value);
+        starItems.forEach(s => {
+            s.classList.toggle('active', s.getAttribute('data-value') <= value);
+        });
     }
 </script>
 @endsection

@@ -34,9 +34,11 @@
                 {{-- IMAGE --}}
                 <div class="position-relative overflow-hidden" style="height:160px;">
                     @if ($item->jenis_produk == 'manis')
-                        <span class="badge bg-warning position-absolute top-0 end-0 m-2">Manis</span>
+                        <span class="badge bg-primary position-absolute top-0 end-0 m-2">Manis</span>
                     @elseif($item->jenis_produk == 'pedas')
                         <span class="badge bg-danger position-absolute top-0 end-0 m-2">Pedas</span>
+                          @elseif($item->jenis_produk == 'gurih')
+                        <span class="badge bg-warning position-absolute top-0 end-0 m-2">Gurih</span>
                     @endif
 
                     <img src="{{ $item->foto ? asset('storage/' . $item->foto) : asset('images/default.png') }}"

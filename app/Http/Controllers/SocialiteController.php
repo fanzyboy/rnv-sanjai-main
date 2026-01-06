@@ -39,7 +39,7 @@ class SocialiteController extends Controller
                         'name'      => $googleUser->getName() ?? 'User',
                         'email'     => $googleUser->getEmail(),
                         'google_id' => $googleUser->getId(),
-                        'password'  => bcrypt(Str::random(32)),
+                        'password'  => null,
                         'role'      => 'user',
                     ]);
                 }

@@ -37,7 +37,11 @@ class PreorderController extends Controller
 
         $qty = $request->query('qty', 1);
 
-        return view('preorder.create', compact('price', 'qty'));
+        // Ambil data user yang sedang login untuk mengisi otomatis di form
+        $user = Auth::user();
+
+        // Pastikan path view sesuai (tadi di kodingan sebelumnya 'preorder.create')
+        return view('preorder.create', compact('price', 'qty', 'user'));
     }
 
     /**
@@ -59,44 +63,44 @@ class PreorderController extends Controller
             'deskripsi'         => 'nullable|string|max:255',
             'metode_pembayaran' => 'required|in:transfer,cod',
             'bukti_transfer'    => 'nullable|file|mimes:jpg,jpeg,png,pdf|max:2048',
+            'nama_bank'         => 'nullable|string|max:50',
+            'nomor_rekening'    => 'nullable|string|max:30',
         ]);
 
-        // Transfer → bukti WAJIB
-        if (
-            $validated['metode_pembayaran'] === 'transfer'
-            && !$request->hasFile('bukti_transfer')
-        ) {
+        // Logika: Jika transfer, bukti transfer wajib ada
+        if ($validated['metode_pembayaran'] === 'transfer' && !$request->hasFile('bukti_transfer')) {
             return back()->withErrors([
-                'bukti_transfer' => 'Bukti transfer wajib diupload.'
+                'bukti_transfer' => 'Bukti transfer wajib diupload untuk metode pembayaran Transfer Bank.'
             ])->withInput();
         }
 
         $user = Auth::user();
 
-        try {
-            $price = ProductPrice::with('product')->findOrFail($validated['price_id']);
-        } catch (\Exception $e) {
-            return back()->with('error', 'Variasi produk tidak ditemukan.');
+        // ============================================================
+        // UPDATE DATA USER (SIMPAN NOMOR REKENING & BANK KE PROFIL)
+        // ============================================================
+        // Ini agar saat order berikutnya, data sudah otomatis terisi
+        if ($request->filled('nama_bank') || $request->filled('nomor_rekening')) {
+            $user->update([
+                'nama_bank'      => $request->nama_bank,
+                'nomor_rekening' => $request->nomor_rekening,
+            ]);
         }
 
         try {
-            // =========================
-            // HITUNG TOTAL AMOUNT
-            // =========================
+            $price = ProductPrice::with('product')->findOrFail($validated['price_id']);
+
+            // Hitung Total
             $totalAmount = $validated['qty'] * $price->harga;
 
-            // =========================
-            // SIMPAN BUKTI TRANSFER
-            // =========================
+            // Simpan File Bukti Transfer
             $buktiPath = null;
             if ($request->hasFile('bukti_transfer')) {
-                $buktiPath = $request->file('bukti_transfer')
-                    ->store('bukti-preorder', 'public');
+                $buktiPath = $request->file('bukti_transfer')->store('bukti-preorder', 'public');
             }
 
             // =========================
-            // SIMPAN PREORDER
-            // status default = pending (DB)
+            // SIMPAN DATA KE TABEL PREORDER
             // =========================
             $preorder = Preorder::create([
                 'user_id'           => $user->id,
@@ -107,6 +111,9 @@ class PreorderController extends Controller
                 'deskripsi'         => $validated['deskripsi'] ?? null,
                 'bukti_transfer'    => $buktiPath,
                 'metode_pembayaran' => $validated['metode_pembayaran'],
+                // Opsional: Simpan juga ke tabel preorder jika tabelnya punya kolom ini
+                'nama_bank'         => $request->nama_bank,
+                'nomor_rekening'    => $request->nomor_rekening,
             ]);
 
             // =========================
@@ -116,35 +123,28 @@ class PreorderController extends Controller
 
             $message = "📌 *PRE-ORDER BARU* 📌\n\n"
                 . "*Nama:* {$user->name}\n"
-                . "*Email:* {$user->email}\n"
+                . "*Bank:* " . ($request->nama_bank ?? '-') . "\n"
+                . "*No. Rek:* " . ($request->nomor_rekening ?? '-') . "\n"
                 . "*No Telp:* {$user->no_telp}\n"
                 . "*Alamat:* {$user->alamat}\n\n"
                 . "=====================\n"
                 . "*DETAIL PREORDER*\n"
                 . "=====================\n"
                 . "*Produk:* {$price->product->nama_produk}\n"
-                . "*Variasi:* {$price->variasi}\n"
-                . "*Qty:* {$preorder->qty}\n"
+                . "*Variasi:* {$price->berat} gr\n"
+                . "*Qty:* {$preorder->qty} pcs\n"
                 . "*Total:* Rp " . number_format($totalAmount, 0, ',', '.') . "\n"
                 . "*Metode:* " . strtoupper($validated['metode_pembayaran']) . "\n"
-                . "*Tanggal:* {$preorder->tanggal_preorder}\n"
-                . "*Catatan:* {$preorder->deskripsi}\n"
-                . "*Status:* Pending\n\n"
-                . "Silakan cek di admin panel 🙏";
+                . "*Catatan:* " . ($preorder->deskripsi ?? '-') . "\n\n"
+                . "Silakan cek admin panel untuk verifikasi bukti transfer.";
 
             return redirect(
                 "https://wa.me/{$adminNumber}?text=" . urlencode($message)
             );
 
         } catch (\Exception $e) {
-
-            Log::error('Preorder Store Error', [
-                'message' => $e->getMessage(),
-                'user_id' => $user->id,
-            ]);
-
-            return back()->with('error', 'Gagal membuat pre-order. Silakan coba lagi.');
+            Log::error('Preorder Store Error: ' . $e->getMessage());
+            return back()->with('error', 'Gagal membuat pre-order. Silakan coba lagi.')->withInput();
         }
     }
-    
 }

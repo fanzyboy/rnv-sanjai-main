@@ -70,7 +70,7 @@ class ProductController extends Controller
 {
     $request->validate([
         'nama_produk' => 'required',
-        'jenis_produk' => 'required|in:manis,pedas',
+        'jenis_produk' => 'required|in:manis,pedas,gurih',
         'deskripsi' => 'nullable',
         'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         'variasi.*.berat' => 'required|integer',
