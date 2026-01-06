@@ -100,7 +100,7 @@
             <div class="row align-items-center g-5">
                 <div class="col-lg-6" data-aos="fade-right">
                     <div class="image-stack position-relative">
-                        <img src="{{ asset('asset/sanjai.jpeg') }}" class="img-fluid rounded-custom shadow-lg main-img" alt="Produksi Sanjai">
+                        <img src="{{ asset('asset/anim.png') }}" class="img-fluid rounded-custom shadow-lg main-img" alt="Produksi Sanjai">
                         <div class="floating-info-box shadow">
                             <div class="d-flex align-items-center gap-3">
                                 <div class="icon-circle bg-orange">
