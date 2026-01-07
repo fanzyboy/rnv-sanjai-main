@@ -38,14 +38,26 @@
                 @error('email') <small class="text-danger">{{ $message }}</small> @enderror
             </div>
 
-            <div class="mb-3">
-                <label for="password" class="form-label fw-semibold">Password</label>
-                <div class="input-group">
-                    <span class="input-group-text bg-transparent"><i class="fas fa-lock text-warning"></i></span>
-                    <input type="password" name="password" id="password" class="form-control" placeholder="••••••••" required>
-                </div>
-                @error('password') <small class="text-danger">{{ $message }}</small> @enderror
-            </div>
+          <div class="mb-3">
+    <label for="password" class="form-label fw-semibold">Password</label>
+    <div class="input-group">
+        <span class="input-group-text bg-transparent">
+            <i class="fas fa-lock text-warning"></i>
+        </span>
+        <input type="password" name="password" id="password"
+               class="form-control"
+               placeholder="••••••••" required>
+    </div>
+
+    <div id="passwordHelp" class="form-text">
+        Minimal 6 karakter
+    </div>
+
+    @error('password')
+        <small class="text-danger">{{ $message }}</small>
+    @enderror
+</div>
+
 
             <div class="mb-3">
                 <label for="password_confirmation" class="form-label fw-semibold">Konfirmasi Password</label>
