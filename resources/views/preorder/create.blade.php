@@ -183,12 +183,12 @@
                                 <div class="admin-account-box p-3 mb-4 shadow-sm border">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <h6 class="fw-bold text-primary mb-0"><i class="fas fa-university me-2"></i>Rekening Pembayaran</h6>
-                                        <span class="badge bg-primary px-2">BCA</span>
+                                        <span class="badge bg-primary px-2">BNI</span>
                                     </div>
                                     <div class="bg-white p-2 rounded border d-flex justify-content-between align-items-center mb-2">
                                         <div>
                                             <span class="d-block small text-muted">Nomor Rekening:</span>
-                                            <h5 class="fw-bold mb-0 text-dark" id="norekAdmin">892012345678</h5>
+                                            <h5 class="fw-bold mb-0 text-dark" id="norekAdmin">17092900</h5>
                                         </div>
                                         <button type="button" class="btn btn-outline-primary btn-copy" onclick="copyNorek()">
                                             <i class="fas fa-copy me-1"></i> <span id="btnCopyText">Salin</span>
