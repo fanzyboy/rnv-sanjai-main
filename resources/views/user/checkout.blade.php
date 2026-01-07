@@ -149,7 +149,7 @@
                                     <label class="form-label fw-bold text-orange-dark"><i class="fas fa-camera me-2"></i>Unggah Bukti Transfer</label>
                                     <div class="bank-info mb-3 p-3 bg-white rounded-3 border">
                                         <p class="small mb-1 text-muted">Transfer ke Rekening Resmi:</p>
-                                        <h6 class="mb-0 fw-bold text-dark">BCA 123456789 <br> <span class="text-orange">A/N R&V SANJAI</span></h6>
+                                        <h6 class="mb-0 fw-bold text-dark">BNI 17056789 <br> <span class="text-orange">A/N R&V SANJAI</span></h6>
                                     </div>
                                     <input type="file" name="bukti" id="bukti_input" class="form-control border-0" accept="image/*">
                                 </div>
